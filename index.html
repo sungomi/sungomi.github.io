@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SUNGOMI.ARC — 게임 &amp; 프로그램 쇼케이스</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
+  />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Apple Liquid Glass 굴절 효과를 위한 SVG 필터 -->
+  <svg class="svg-filters" aria-hidden="true" width="0" height="0">
+    <defs>
+      <filter id="liquid-refract" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence
+          type="fractalNoise"
+          baseFrequency="0.012 0.012"
+          numOctaves="2"
+          seed="7"
+          result="noise"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="noise"
+          scale="6"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- 다크 네온 오로라 배경 (유리 굴절 및 블러 대비용) -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- 상단 리퀴드 글래스 네비게이션 -->
+  <header class="glass-header">
+    <div class="header-inner">
+      <a href="#" class="brand" id="brandName">
+        <span class="brand-orb"></span>
+        <span class="brand-text">STUDIO.ARC</span>
+      </a>
+      <nav class="header-links" id="creatorLinks" aria-label="제작자 외부 링크"></nav>
+      <a href="./admin.html" class="header-link manage-btn" title="글 작성 및 관리 페이지">
+        ✦ 글 관리
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 히어로 섹션 -->
+    <section class="hero">
+      <div class="hero-badge glass-pill" id="heroBadge">
+        <span class="pulse-dot"></span>
+        <span>INDIE GAMES &amp; CREATIVE TOOLS</span>
+      </div>
+      <h1 class="hero-title" id="heroTitle">
+        상상을 현실로 만든<br />나의 디지털 아카이브
+      </h1>
+      <p class="hero-subtitle" id="heroSubtitle">
+        직접 설계하고 개발한 인디 게임과 유용한 프로그램들을 한곳에 모았습니다.
+        카드를 눌러 생생한 프리뷰 영상과 다운로드 링크를 확인해보세요.
+      </p>
+    </section>
+
+    <!-- 카테고리 필터 & 검색 컨트롤 바 -->
+    <section class="controls-bar" aria-label="필터 및 검색">
+      <div class="filter-dock glass-surface" role="tablist" aria-label="카테고리 필터">
+        <div class="filter-pill-indicator" id="filterIndicator" aria-hidden="true"></div>
+        <button class="filter-btn active" data-category="all" role="tab" aria-selected="true">
+          전체 <span class="count" id="count-all">0</span>
+        </button>
+        <button class="filter-btn" data-category="game" role="tab" aria-selected="false">
+          게임 <span class="count" id="count-game">0</span>
+        </button>
+        <button class="filter-btn" data-category="program" role="tab" aria-selected="false">
+          프로그램 <span class="count" id="count-program">0</span>
+        </button>
+        <button class="filter-btn" data-category="webapp" role="tab" aria-selected="false">
+          웹앱 <span class="count" id="count-webapp">0</span>
+        </button>
+      </div>
+
+      <div class="search-box glass-surface">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" stroke-linecap="round" />
+        </svg>
+        <input
+          type="search"
+          id="searchInput"
+          placeholder="게임, 프로그램, 태그 검색..."
+          autocomplete="off"
+          aria-label="프로젝트 검색"
+        />
+        <button class="search-clear" id="searchClear" aria-label="검색어 지우기" hidden>
+          ✕
+        </button>
+      </div>
+    </section>
+
+    <!-- 프로젝트 카드 그리드 -->
+    <section class="projects-section" aria-label="작품 목록">
+      <div class="projects-grid" id="projectsGrid"></div>
+      <div class="empty-state glass-surface" id="emptyState" hidden>
+        <div class="empty-icon">🫧</div>
+        <h3>검색 결과가 없습니다</h3>
+        <p>다른 키워드나 카테고리로 다시 찾아보세요.</p>
+        <button class="glass-action-btn" id="resetFilterBtn">전체 보기</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p id="footerText">© 2026 SUNGOMI.ARC — Crafted with Liquid Glass &amp; Neon.</p>
+  </footer>
+
+  <!-- 물방울처럼 쫙 펼쳐지는 리퀴드 글래스 상세 모달 -->
+  <div class="liquid-modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div
+      class="liquid-modal"
+      id="liquidModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+      <!-- 유리 광택 레이어 -->
+      <div class="modal-specular" aria-hidden="true"></div>
+
+      <button class="modal-close-btn glass-icon-btn" id="modalCloseBtn" aria-label="닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" />
+        </svg>
+      </button>
+
+      <div class="modal-content">
+        <!-- 자동 재생 동영상 플레이어 영역 -->
+        <div class="modal-media-wrap">
+          <video
+            id="modalVideo"
+            class="modal-video"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
+          <iframe
+            id="modalIframe"
+            class="modal-iframe"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen
+            hidden
+          ></iframe>
+          <div class="video-overlay-controls">
+            <span class="live-badge">
+              <span class="live-dot"></span> AUTO PREVIEW
+            </span>
+            <div class="video-btns">
+              <button class="glass-icon-btn small" id="muteToggleBtn" title="소리 켜기/끄기" aria-label="소리 켜기/끄기">
+                <svg id="iconMuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                  <path d="m22 9-6 6M16 9l6 6" stroke-linecap="round" />
+                </svg>
+                <svg id="iconUnmuted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden>
+                  <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" stroke-linecap="round" />
+                </svg>
+              </button>
+              <button class="glass-icon-btn small" id="fullscreenBtn" title="전체화면" aria-label="전체화면">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 작품 상세 정보 & 홍보 링크 영역 -->
+        <div class="modal-info">
+          <div class="modal-meta-top">
+            <span class="category-chip" id="modalCategory">GAME</span>
+            <div class="modal-tags" id="modalTags"></div>
+          </div>
+
+          <h2 class="modal-title" id="modalTitle">Project Title</h2>
+          <p class="modal-tagline" id="modalTagline"></p>
+          <p class="modal-description" id="modalDescription"></p>
+
+          <div class="modal-stats" id="modalStats"></div>
+
+          <div class="modal-links" id="modalLinks"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./projects.js"></script>
+  <script src="./media-store.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
