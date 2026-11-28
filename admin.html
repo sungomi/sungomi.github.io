@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SUNGOMI.ARC — 글 작성 및 관리 스튜디오</title>
+  <title>sungomi — 관리자</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link
     rel="stylesheet"
@@ -13,29 +13,24 @@
   <link rel="stylesheet" href="./admin.css" />
 </head>
 <body class="admin-body">
-  <div class="ambient-bg" aria-hidden="true"></div>
-
-  <!-- 상단 관리자 헤더 -->
-  <header class="admin-header glass-surface">
+  <header class="admin-header">
     <div class="admin-header-left">
-      <a href="./index.html" class="back-btn" title="쇼케이스 메인으로 돌아가기">
-        ← 쇼케이스 보기
-      </a>
+      <a href="./index.html" class="back-btn">← 사이트로</a>
       <div class="admin-brand">
-        <span class="brand-orb"></span>
-        <span>STUDIO MANAGER</span>
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>관리자</span>
       </div>
     </div>
 
     <div class="admin-header-actions">
-      <button class="adm-btn primary" id="newPostBtn">+ 새 글 쓰기</button>
-      <button class="adm-btn" id="siteSettingsBtn">⚙ 사이트 설정</button>
-      <button class="adm-btn accent" id="exportJsBtn" title="GitHub Pages 배포용 projects.js 다운로드">
-        ⬇ projects.js 내보내기
+      <button class="adm-btn primary" id="newPostBtn">+ 새 항목</button>
+      <button class="adm-btn" id="siteSettingsBtn">사이트 설정</button>
+      <button class="adm-btn accent" id="exportJsBtn" title="GitHub Pages 반영용 projects.js 다운로드">
+        projects.js 내보내기
       </button>
-      <button class="adm-btn" id="exportJsonBtn">JSON 백업</button>
+      <button class="adm-btn" id="exportJsonBtn">백업</button>
       <label class="adm-btn file-label">
-        JSON 복원
+        복원
         <input type="file" id="importJsonInput" accept=".json,application/json" hidden />
       </label>
       <button class="adm-btn danger-ghost" id="resetDefaultBtn">초기화</button>
@@ -43,82 +38,79 @@
   </header>
 
   <main class="admin-container">
-    <!-- 대시보드 KPI 요약 -->
-    <section class="kpi-grid" aria-label="콘텐츠 요약">
-      <div class="kpi-card glass-surface">
-        <span class="kpi-label">전체 글</span>
+    <!-- 요약 -->
+    <section class="kpi-grid" aria-label="요약">
+      <div class="kpi-card">
+        <span class="kpi-label">전체</span>
         <strong class="kpi-value" id="kpiTotal">0</strong>
       </div>
-      <div class="kpi-card glass-surface">
-        <span class="kpi-label">발행됨 (노출 중)</span>
-        <strong class="kpi-value cyan" id="kpiPublished">0</strong>
+      <div class="kpi-card">
+        <span class="kpi-label">공개 중</span>
+        <strong class="kpi-value blue" id="kpiPublished">0</strong>
       </div>
-      <div class="kpi-card glass-surface">
-        <span class="kpi-label">임시저장 (비공개)</span>
-        <strong class="kpi-value amber" id="kpiDraft">0</strong>
-      </div>
-      <div class="kpi-card glass-surface">
-        <span class="kpi-label">로컬 업로드 영상</span>
-        <strong class="kpi-value pink" id="kpiVideos">0</strong>
+      <div class="kpi-card">
+        <span class="kpi-label">숨김</span>
+        <strong class="kpi-value muted" id="kpiHidden">0</strong>
       </div>
     </section>
 
-    <!-- 메인 2단 워크스페이스 -->
+    <!-- 2단 워크스페이스 -->
     <div class="admin-workspace">
-      <!-- 좌측: 글 목록 & 순서 관리 -->
-      <aside class="sidebar-panel glass-surface">
+      <!-- 좌측 목록 -->
+      <aside class="sidebar-panel">
         <div class="sidebar-top">
           <input
             type="search"
             id="listSearchInput"
             class="adm-input"
-            placeholder="글 제목, 태그 검색..."
+            placeholder="제목, 태그 검색..."
           />
           <div class="sidebar-filters">
-            <select id="listStatusFilter" class="adm-select" aria-label="상태 필터">
+            <select id="listStatusFilter" class="adm-select" aria-label="공개 상태 필터">
               <option value="all">상태: 전체</option>
-              <option value="published">발행됨만</option>
-              <option value="draft">임시저장만</option>
+              <option value="published">공개만</option>
+              <option value="hidden">숨김만</option>
             </select>
             <select id="listCategoryFilter" class="adm-select" aria-label="카테고리 필터">
               <option value="all">분류: 전체</option>
+              <option value="program">앱</option>
               <option value="game">게임</option>
-              <option value="program">프로그램</option>
-              <option value="webapp">웹앱</option>
+              <option value="webapp">웹</option>
             </select>
           </div>
-          <p class="sidebar-hint">드래그 또는 ▲▼ 버튼으로 노출 순서를 바꿀 수 있습니다.</p>
+          <p class="sidebar-hint">드래그 또는 ▲▼로 순서 변경 · 눈 버튼으로 즉시 숨기기/보이기</p>
         </div>
 
         <div class="post-list" id="postList"></div>
       </aside>
 
-      <!-- 우측: 상세 에디터 -->
-      <section class="editor-panel glass-surface" id="editorPanel">
+      <!-- 우측 에디터 -->
+      <section class="editor-panel" id="editorPanel">
         <div class="editor-header">
           <div class="editor-status-wrap">
-            <span class="status-pill" id="editorStatusPill">발행됨</span>
-            <span class="save-indicator" id="saveIndicator">모든 변경사항 저장됨</span>
+            <span class="status-pill" id="editorStatusPill">공개 중</span>
+            <span class="save-indicator" id="saveIndicator">저장됨</span>
           </div>
           <div class="editor-header-btns">
-            <button class="adm-btn" id="duplicatePostBtn">복제</button>
-            <button class="adm-btn danger-ghost" id="deletePostBtn">삭제</button>
-            <button class="adm-btn primary" id="savePostBtn">저장하기 (⌘S)</button>
+            <button type="button" class="adm-btn" id="toggleHideBtn">숨기기</button>
+            <button type="button" class="adm-btn" id="duplicatePostBtn">복제</button>
+            <button type="button" class="adm-btn danger-ghost" id="deletePostBtn">삭제</button>
+            <button type="button" class="adm-btn primary" id="savePostBtn">저장</button>
           </div>
         </div>
 
         <form id="postForm" class="editor-form" onsubmit="return false;">
           <!-- 1. 기본 정보 -->
           <div class="form-section">
-            <h2 class="section-title">1. 기본 정보</h2>
+            <h2 class="section-title">기본 정보</h2>
             <div class="form-grid-2">
               <div class="field">
-                <label for="fieldTitle">작품 / 글 제목 *</label>
-                <input type="text" id="fieldTitle" class="adm-input" placeholder="예: 썬빗 (SUNBIT)" required />
+                <label for="fieldTitle">제목 *</label>
+                <input type="text" id="fieldTitle" class="adm-input" placeholder="예: NoopToken" required />
               </div>
               <div class="field">
-                <label for="fieldId">고유 ID (영문/숫자/-)</label>
-                <input type="text" id="fieldId" class="adm-input" placeholder="sunbit" />
+                <label for="fieldId">ID</label>
+                <input type="text" id="fieldId" class="adm-input" placeholder="nooptoken" />
               </div>
             </div>
 
@@ -126,172 +118,128 @@
               <div class="field">
                 <label for="fieldCategory">카테고리</label>
                 <select id="fieldCategory" class="adm-select">
-                  <option value="game">게임 (game)</option>
-                  <option value="program">프로그램 (program)</option>
-                  <option value="webapp">웹앱 (webapp)</option>
+                  <option value="program">앱</option>
+                  <option value="game">게임</option>
+                  <option value="webapp">웹</option>
                 </select>
               </div>
               <div class="field">
                 <label for="fieldCategoryLabel">배지 라벨</label>
-                <input type="text" id="fieldCategoryLabel" class="adm-input" placeholder="예: WEB GAME, PROGRAM" />
+                <input type="text" id="fieldCategoryLabel" class="adm-input" placeholder="PROGRAM, WEB GAME" />
               </div>
               <div class="field">
-                <label for="fieldStatus">발행 상태</label>
+                <label for="fieldStatus">공개 여부</label>
                 <select id="fieldStatus" class="adm-select">
-                  <option value="published">발행됨 (메인에 노출)</option>
-                  <option value="draft">임시저장 (비공개)</option>
+                  <option value="published">공개 (메인에 표시)</option>
+                  <option value="draft">숨김 (비공개)</option>
                 </select>
-              </div>
-            </div>
-
-            <div class="form-grid-2 align-center">
-              <div class="field">
-                <label>포인트 컬러</label>
-                <div class="color-picker-row">
-                  <input type="color" id="fieldAccentColor" class="color-input" value="#2563eb" />
-                  <div class="color-presets" id="colorPresets">
-                    <button type="button" class="color-dot" data-color="#2563eb" style="background:#2563eb" title="Blue"></button>
-                    <button type="button" class="color-dot" data-color="#0ea5e9" style="background:#0ea5e9" title="Sky"></button>
-                    <button type="button" class="color-dot" data-color="#10b981" style="background:#10b981" title="Emerald"></button>
-                    <button type="button" class="color-dot" data-color="#8b5cf6" style="background:#8b5cf6" title="Violet"></button>
-                    <button type="button" class="color-dot" data-color="#f59e0b" style="background:#f59e0b" title="Amber"></button>
-                    <button type="button" class="color-dot" data-color="#ec4899" style="background:#ec4899" title="Pink"></button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="toggle-card">
-                  <input type="checkbox" id="fieldFeatured" />
-                  <span class="toggle-text">
-                    <strong>★ 대표 추천 작품으로 강조</strong>
-                    <small>카드 좌측 상단에 추천 배지가 표시됩니다.</small>
-                  </span>
-                </label>
               </div>
             </div>
           </div>
 
-          <!-- 2. 소개글 작성 (마크다운 지원) -->
+          <!-- 2. 소개 -->
           <div class="form-section">
-            <h2 class="section-title">2. 소개글 작성</h2>
+            <h2 class="section-title">소개</h2>
             <div class="field">
-              <label for="fieldTagline">한 줄 요약 (카드에 표시)</label>
+              <label for="fieldTagline">한 줄 소개</label>
               <input
                 type="text"
                 id="fieldTagline"
                 class="adm-input"
-                placeholder="핵심 매력을 한 줄로 요약하세요."
+                placeholder="핵심 기능을 한 줄로 입력하세요."
               />
             </div>
 
             <div class="field">
               <div class="md-header">
-                <label for="fieldDescription">상세 설명 (모달에 표시 · 마크다운 지원)</label>
+                <label for="fieldDescription">상세 설명 (마크다운 지원)</label>
                 <div class="md-tabs">
                   <button type="button" class="md-tab active" data-mode="write">작성</button>
                   <button type="button" class="md-tab" data-mode="preview">미리보기</button>
                 </div>
               </div>
               <div class="md-toolbar" id="mdToolbar">
-                <button type="button" class="md-tool-btn" data-wrap="**"><b>B</b> 굵게</button>
-                <button type="button" class="md-tool-btn" data-wrap="*"><i>I</i> 기울임</button>
-                <button type="button" class="md-tool-btn" data-wrap="`">&lt;/&gt; 코드</button>
-                <button type="button" class="md-tool-btn" data-link="true">🔗 링크</button>
+                <button type="button" class="md-tool-btn" data-wrap="**"><b>B</b></button>
+                <button type="button" class="md-tool-btn" data-wrap="*"><i>I</i></button>
+                <button type="button" class="md-tool-btn" data-wrap="`">코드</button>
+                <button type="button" class="md-tool-btn" data-link="true">링크</button>
                 <span class="char-count" id="descCharCount">0자</span>
               </div>
               <textarea
                 id="fieldDescription"
                 class="adm-textarea"
-                rows="6"
-                placeholder="게임 규칙, 주요 기능, 개발 배경 등을 자유롭게 작성하세요. (**굵게**, *기울임*, `코드`, [링크](https://...) 지원)"
+                rows="5"
+                placeholder="주요 기능과 지원 환경을 간결하게 작성하세요."
               ></textarea>
               <div class="md-preview-box" id="mdPreviewBox" hidden></div>
             </div>
           </div>
 
-          <!-- 3. 동영상 / 미디어 스튜디오 -->
+          <!-- 3. 대표 이미지 및 영상 -->
           <div class="form-section">
-            <h2 class="section-title">3. 자동 재생 동영상 설정</h2>
-            <div class="media-mode-tabs" id="mediaModeTabs">
-              <button type="button" class="media-tab active" data-source="preset">내장 실시간 데모</button>
-              <button type="button" class="media-tab" data-source="url">영상 URL / YouTube</button>
-              <button type="button" class="media-tab" data-source="local">직접 파일 업로드</button>
+            <h2 class="section-title">대표 이미지 · 영상</h2>
+
+            <div class="field">
+              <label for="fieldImageUrl">대표 이미지 경로 또는 URL</label>
+              <div class="input-with-btn">
+                <input
+                  type="text"
+                  id="fieldImageUrl"
+                  class="adm-input"
+                  placeholder="./images/example.png 또는 https://..."
+                />
+                <label class="adm-btn file-label">
+                  이미지 업로드
+                  <input type="file" id="imageFileInput" accept="image/*" hidden />
+                </label>
+              </div>
             </div>
 
-            <div class="media-panels">
-              <!-- 내장 데모 프리셋 -->
-              <div class="media-panel" id="panelPreset">
-                <label for="fieldDemoPreset">데모 그래픽 스타일 선택</label>
-                <select id="fieldDemoPreset" class="adm-select">
-                  <option value="cyber">Cyber Synthwave (사이버 네온 그리드)</option>
-                  <option value="arcade">Arcade Bullet Hell (우주 탄막 슈팅)</option>
-                  <option value="audio">Audio Spectrum (오디오 파형 &amp; 스펙트럼)</option>
-                  <option value="physics">Orbital Physics (행성 궤도 시뮬레이션)</option>
-                  <option value="shader">Liquid Shader (유리 굴절 컬러 블롭)</option>
-                  <option value="terminal">Hacker Terminal (터미널 로그)</option>
-                </select>
-              </div>
-
-              <!-- 외부 URL / YouTube -->
-              <div class="media-panel" id="panelUrl" hidden>
-                <label for="fieldVideoUrl">동영상 파일 경로 또는 YouTube URL</label>
+            <div class="field">
+              <label for="fieldVideoUrl">영상 URL / YouTube (선택 · 비워두면 대표 이미지 표시)</label>
+              <div class="input-with-btn">
                 <input
                   type="text"
                   id="fieldVideoUrl"
                   class="adm-input"
-                  placeholder="예: ./videos/gameplay.mp4 또는 https://youtube.com/watch?v=..."
+                  placeholder="https://youtube.com/watch?v=... 또는 ./videos/demo.mp4"
                 />
-                <small class="field-help">GitHub Pages 배포 시 저장소 내 `./videos/파일명.mp4` 경로 또는 유튜브 링크를 권장합니다.</small>
-              </div>
-
-              <!-- 로컬 파일 드래그 & 드롭 업로드 -->
-              <div class="media-panel" id="panelLocal" hidden>
-                <div class="dropzone" id="videoDropzone">
-                  <input type="file" id="videoFileInput" accept="video/mp4,video/webm,video/quicktime" hidden />
-                  <div class="dropzone-icon">🎬</div>
-                  <p><strong>동영상 파일을 여기로 드래그하거나 클릭하여 선택</strong></p>
-                  <small>MP4, WebM, MOV 지원 · 브라우저(IndexedDB)에 안전하게 저장되어 즉시 자동 재생됩니다.</small>
-                </div>
-                <div class="local-video-info" id="localVideoInfo" hidden>
-                  <span id="localVideoName">video.mp4</span>
-                  <button type="button" class="adm-btn danger-ghost small" id="removeLocalVideoBtn">업로드 영상 삭제</button>
-                </div>
+                <button type="button" class="adm-btn danger-ghost" id="clearVideoBtn">영상 비우기</button>
               </div>
             </div>
 
-            <!-- 실시간 미리보기 플레이어 -->
-            <div class="editor-video-preview">
-              <span class="preview-badge">실시간 자동 재생 미리보기</span>
-              <video id="editorPreviewVideo" autoplay muted loop playsinline></video>
+            <div class="editor-media-preview">
+              <img id="editorPreviewImage" alt="미리보기" hidden />
+              <video id="editorPreviewVideo" autoplay muted loop playsinline hidden></video>
               <iframe id="editorPreviewIframe" allow="autoplay; encrypted-media" hidden></iframe>
+              <div class="preview-empty" id="editorPreviewEmpty">이미지가 설정되지 않았습니다.</div>
             </div>
           </div>
 
-          <!-- 4. 태그, 스탯, 홍보 링크 -->
+          <!-- 4. 태그 · 스펙 · 링크 -->
           <div class="form-section">
-            <h2 class="section-title">4. 태그 · 상세 스펙 · 홍보 링크</h2>
+            <h2 class="section-title">태그 · 스펙 · 링크</h2>
 
             <div class="field">
-              <label for="tagInput">태그 (입력 후 Enter 또는 쉼표)</label>
+              <label for="tagInput">태그 (Enter 또는 쉼표로 추가)</label>
               <div class="tag-editor" id="tagEditor">
                 <div class="tag-chips" id="tagChips"></div>
-                <input type="text" id="tagInput" placeholder="예: Unity, C#, 무료..." />
+                <input type="text" id="tagInput" placeholder="예: macOS, Windows, Rust" />
               </div>
             </div>
 
             <div class="field">
               <div class="row-header">
-                <label>상세 스펙 / 정보 카드</label>
-                <button type="button" class="adm-btn small" id="addStatBtn">+ 항목 추가</button>
+                <label>스펙 정보</label>
+                <button type="button" class="adm-btn small" id="addStatBtn">+ 추가</button>
               </div>
               <div class="dynamic-list" id="statsBuilder"></div>
             </div>
 
             <div class="field">
               <div class="row-header">
-                <label>다운로드 · 플레이 · 홍보 링크 버튼</label>
-                <button type="button" class="adm-btn small" id="addLinkBtn">+ 링크 추가</button>
+                <label>다운로드 / 실행 링크</label>
+                <button type="button" class="adm-btn small" id="addLinkBtn">+ 추가</button>
               </div>
               <div class="dynamic-list" id="linksBuilder"></div>
             </div>
@@ -301,45 +249,40 @@
     </div>
   </main>
 
-  <!-- 사이트 전역 설정 모달 -->
+  <!-- 사이트 설정 모달 -->
   <div class="liquid-modal-backdrop" id="settingsBackdrop" aria-hidden="true">
-    <div class="settings-modal glass-surface" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="settings-header">
-        <h2 id="settingsTitle">⚙ 사이트 전역 설정</h2>
-        <button class="glass-icon-btn" id="closeSettingsBtn" aria-label="닫기">✕</button>
+        <h2 id="settingsTitle">사이트 설정</h2>
+        <button class="icon-btn small" id="closeSettingsBtn" aria-label="닫기">✕</button>
       </div>
       <div class="settings-body">
         <div class="field">
-          <label for="cfgBrandName">브랜드 이름</label>
+          <label for="cfgBrandName">사이트 이름</label>
           <input type="text" id="cfgBrandName" class="adm-input" />
         </div>
         <div class="field">
-          <label for="cfgHeroBadge">히어로 상단 배지</label>
-          <input type="text" id="cfgHeroBadge" class="adm-input" />
-        </div>
-        <div class="field">
-          <label for="cfgHeroTitle">히어로 메인 제목 (줄바꿈 &lt;br /&gt; 사용 가능)</label>
+          <label for="cfgHeroTitle">메인 제목</label>
           <input type="text" id="cfgHeroTitle" class="adm-input" />
         </div>
         <div class="field">
-          <label for="cfgHeroSubtitle">히어로 부제목</label>
-          <textarea id="cfgHeroSubtitle" class="adm-textarea" rows="3"></textarea>
+          <label for="cfgHeroSubtitle">부제목</label>
+          <textarea id="cfgHeroSubtitle" class="adm-textarea" rows="2"></textarea>
         </div>
         <div class="field">
           <div class="row-header">
-            <label>상단 네비게이션 링크</label>
-            <button type="button" class="adm-btn small" id="addCfgLinkBtn">+ 링크 추가</button>
+            <label>상단 링크</label>
+            <button type="button" class="adm-btn small" id="addCfgLinkBtn">+ 추가</button>
           </div>
           <div class="dynamic-list" id="cfgLinksBuilder"></div>
         </div>
       </div>
       <div class="settings-footer">
-        <button type="button" class="adm-btn primary" id="saveSettingsBtn">설정 저장</button>
+        <button type="button" class="adm-btn primary" id="saveSettingsBtn">저장</button>
       </div>
     </div>
   </div>
 
-  <!-- 토스트 알림 -->
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <script src="./projects.js"></script>

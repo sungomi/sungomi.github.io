@@ -1,6 +1,81 @@
 (() => {
-  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v2";
-  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v2";
+  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v3";
+  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v3";
+
+  const PLATFORM_ICONS = {
+    macos: {
+      title: "macOS",
+      svg: `<svg class="os-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.96 6.32c.67-.81 1.12-1.94 1-3.07-.96.04-2.13.64-2.82 1.45-.61.7-.114 1.85-1 2.96 1.07.08 2.16-.54 2.82-1.34z"/></svg>`,
+    },
+    windows: {
+      title: "Windows",
+      svg: `<svg class="os-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.55 10.35 4.5v7.1H3V5.55zm0 12.9 7.35 1.05v-7.05H3v6zm8.25 1.18L21 21v-8.55h-9.75v7.18zm0-15.26v7.23H21V3l-9.75 1.37z"/></svg>`,
+    },
+    ios: {
+      title: "iPhone / iOS",
+      svg: `<svg class="os-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 5.5h3"/><circle cx="12" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg>`,
+    },
+    web: {
+      title: "Web",
+      svg: `<svg class="os-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a13.5 13.5 0 0 0 0 18M12 3a13.5 13.5 0 0 1 0 18"/></svg>`,
+    },
+  };
+
+  function detectPlatforms(project) {
+    if (Array.isArray(project.platforms) && project.platforms.length) {
+      return project.platforms;
+    }
+    const text = [
+      ...(project.tags || []),
+      ...(project.stats || []).map((s) => s.value),
+    ]
+      .join(" ")
+      .toLowerCase();
+    const list = [];
+    if (/\bios\b|iphone/.test(text)) list.push("ios");
+    if (/mac|macos/.test(text)) list.push("macos");
+    if (/win|windows/.test(text)) list.push("windows");
+    if (/웹|web|browser/.test(text)) list.push("web");
+    return list;
+  }
+
+  function renderPlatformIcons(platforms) {
+    return platforms
+      .filter((k) => PLATFORM_ICONS[k])
+      .map(
+        (k) =>
+          `<span class="os-badge" title="${PLATFORM_ICONS[k].title}" aria-label="${PLATFORM_ICONS[k].title}">${PLATFORM_ICONS[k].svg}</span>`
+      )
+      .join("");
+  }
+
+  function renderTagHtml(tag) {
+    const low = String(tag || "").toLowerCase();
+    if (low === "macos" || low === "mac") {
+      return `<span class="tag tag-os" title="macOS">${PLATFORM_ICONS.macos.svg}</span>`;
+    }
+    if (low === "windows" || low === "win") {
+      return `<span class="tag tag-os" title="Windows">${PLATFORM_ICONS.windows.svg}</span>`;
+    }
+    if (low === "ios" || low === "iphone") {
+      return `<span class="tag tag-os" title="iPhone / iOS">${PLATFORM_ICONS.ios.svg}</span>`;
+    }
+    return `<span class="tag">${escapeHtml(tag)}</span>`;
+  }
+
+  function renderLinkLabel(label) {
+    const low = String(label || "").toLowerCase();
+    if (low.includes("mac")) {
+      return `${PLATFORM_ICONS.macos.svg}<span>${escapeHtml(label)}</span>`;
+    }
+    if (low.includes("win")) {
+      return `${PLATFORM_ICONS.windows.svg}<span>${escapeHtml(label)}</span>`;
+    }
+    if (low.includes("ios") || low.includes("iphone")) {
+      return `${PLATFORM_ICONS.ios.svg}<span>${escapeHtml(label)}</span>`;
+    }
+    return `<span>${escapeHtml(label)}</span>`;
+  }
 
   function loadStoredJson(key, fallback) {
     try {
@@ -15,7 +90,7 @@
 
   const config = loadStoredJson(STORAGE_CONFIG_KEY, window.SITE_CONFIG || {});
   const allProjects = loadStoredJson(STORAGE_PROJECTS_KEY, window.PROJECTS || []);
-  const projects = allProjects.filter((p) => p.status !== "draft");
+  const projects = allProjects.filter((p) => !p.hidden && p.status !== "draft");
 
   // DOM 요소
   const brandNameEl = document.getElementById("brandName");
@@ -189,10 +264,10 @@
       card.setAttribute("role", "button");
       card.setAttribute("aria-label", `${project.title} 상세 보기`);
 
-      const platformStat =
-        (project.stats || []).find((s) => s.label === "플랫폼") ||
-        (project.stats || [])[0];
-      const platformText = platformStat ? platformStat.value : "";
+      const platforms = detectPlatforms(project);
+      const nonOsTags = (project.tags || []).filter(
+        (t) => !/^(macos|mac|windows|win|ios|iphone)$/i.test(String(t).trim())
+      );
 
       card.innerHTML = `
         <div class="card-media">
@@ -206,10 +281,10 @@
           </div>
           <p class="card-tagline">${escapeHtml(project.tagline)}</p>
           <div class="card-tags">
-            ${(project.tags || []).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+            ${nonOsTags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
           </div>
           <div class="card-footer">
-            <span class="card-platform">${escapeHtml(platformText)}</span>
+            <div class="card-platforms">${renderPlatformIcons(platforms)}</div>
             <span class="card-cta-label">보기 →</span>
           </div>
         </div>
@@ -241,18 +316,22 @@
     modalDescription.innerHTML = renderSimpleMarkdown(project.description);
 
     modalTags.innerHTML = (project.tags || [])
-      .map((t) => `<span class="tag">${escapeHtml(t)}</span>`)
+      .map((t) => renderTagHtml(t))
       .join("");
 
     modalStats.innerHTML = (project.stats || [])
-      .map(
-        (s) => `
+      .map((s) => {
+        const isPlat = s.label === "플랫폼";
+        const valHtml = isPlat
+          ? `<div class="stat-value stat-platforms">${renderPlatformIcons(detectPlatforms(project))}</div>`
+          : `<div class="stat-value">${escapeHtml(s.value)}</div>`;
+        return `
         <div class="stat-box">
           <div class="stat-label">${escapeHtml(s.label)}</div>
-          <div class="stat-value">${escapeHtml(s.value)}</div>
+          ${valHtml}
         </div>
-      `
-      )
+      `;
+      })
       .join("");
 
     modalLinks.innerHTML = (project.links || [])
@@ -264,7 +343,7 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          <span>${escapeHtml(link.label)}</span>
+          ${renderLinkLabel(link.label)}
           <span>↗</span>
         </a>
       `
@@ -405,8 +484,31 @@
   modalBackdrop.addEventListener("click", (e) => {
     if (e.target === modalBackdrop) closeModal();
   });
+  // 숨겨진 관리자 페이지 진입 (단축키 Ctrl+Shift+A 또는 로고 5회 연속 클릭)
+  let logoClicks = 0;
+  let logoClickTimer = null;
+  if (brandNameEl) {
+    brandNameEl.addEventListener("click", (e) => {
+      e.preventDefault();
+      logoClicks += 1;
+      clearTimeout(logoClickTimer);
+      if (logoClicks >= 5) {
+        logoClicks = 0;
+        window.location.href = "./admin.html";
+        return;
+      }
+      logoClickTimer = setTimeout(() => {
+        logoClicks = 0;
+      }, 1500);
+    });
+  }
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeModal();
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      window.location.href = "./admin.html";
+    }
   });
 
   muteToggleBtn.addEventListener("click", () => {
