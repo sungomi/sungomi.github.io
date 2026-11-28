@@ -1,6 +1,6 @@
 (() => {
-  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v3";
-  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v3";
+  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v4";
+  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v4";
 
   const PLATFORM_ICONS = {
     macos: {

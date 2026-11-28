@@ -1,6 +1,6 @@
 (() => {
-  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v3";
-  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v3";
+  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v4";
+  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v4";
   const SESSION_AUTH_KEY = "sungomi_admin_unlocked_v1";
   const EXPECTED_HASH = "c2aedfe4e480f615caa9055bbf823ab7d3b84b50a9f39b91744d582d4d5ee71c";
 
