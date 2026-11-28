@@ -78,6 +78,7 @@
   let projects = loadStored(STORAGE_PROJECTS_KEY, window.PROJECTS || []);
   let selectedIndex = projects.length > 0 ? 0 : -1;
   let statusFilter = "all";
+  let dragSrcIndex = null;
   let autosaveTimer = null;
 
   // DOM
@@ -209,8 +210,11 @@
 
       const item = document.createElement("div");
       item.className = `post-item ${idx === selectedIndex ? "active" : ""} ${hidden ? "is-hidden" : ""}`;
+      item.draggable = true;
+      item.dataset.index = String(idx);
       item.innerHTML = `
-        <img class="post-thumb" src="${escapeHtml(p.imageUrl || "")}" alt="" onerror="this.style.visibility='hidden'" />
+        <span class="drag-handle" title="드래그하여 순서 변경" aria-hidden="true">⋮⋮</span>
+        <img class="post-thumb" src="${escapeHtml(p.imageUrl || "")}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />
         <div class="post-info">
           <div class="post-title">${escapeHtml(p.title || "제목 없음")}</div>
           <div class="post-sub">${escapeHtml(CATEGORY_LABELS[p.category] || p.categoryLabel || "APP")}</div>
@@ -237,18 +241,62 @@
       item.querySelectorAll("[data-move]").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
-          const toIdx = idx + Number(btn.dataset.move);
-          if (toIdx < 0 || toIdx >= projects.length) return;
-          const [moved] = projects.splice(idx, 1);
-          projects.splice(toIdx, 0, moved);
-          if (selectedIndex === idx) selectedIndex = toIdx;
-          persistAll();
-          renderPostList();
+          moveProject(idx, idx + Number(btn.dataset.move));
         });
+      });
+
+      // 드래그 앤 드롭 순서 변경
+      item.addEventListener("dragstart", (e) => {
+        dragSrcIndex = idx;
+        item.classList.add("dragging");
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(idx));
+        }
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        postListEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+        dragSrcIndex = null;
+      });
+
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (dragSrcIndex === null || dragSrcIndex === idx) return;
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+        item.classList.add("drag-over");
+      });
+
+      item.addEventListener("dragleave", () => {
+        item.classList.remove("drag-over");
+      });
+
+      item.addEventListener("drop", (e) => {
+        e.preventDefault();
+        item.classList.remove("drag-over");
+        if (dragSrcIndex !== null && dragSrcIndex !== idx) {
+          moveProject(dragSrcIndex, idx);
+        }
       });
 
       postListEl.appendChild(item);
     });
+  }
+
+  function moveProject(fromIdx, toIdx) {
+    if (toIdx < 0 || toIdx >= projects.length || fromIdx === toIdx) return;
+    const [moved] = projects.splice(fromIdx, 1);
+    projects.splice(toIdx, 0, moved);
+    if (selectedIndex === fromIdx) {
+      selectedIndex = toIdx;
+    } else if (fromIdx < selectedIndex && toIdx >= selectedIndex) {
+      selectedIndex -= 1;
+    } else if (fromIdx > selectedIndex && toIdx <= selectedIndex) {
+      selectedIndex += 1;
+    }
+    persistAll();
+    renderPostList();
   }
 
   // ===== 에디터 =====
