@@ -406,14 +406,17 @@ body.modal-open {
   border: 1px solid var(--border-subtle);
 }
 
+.card-image,
 .card-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   display: block;
   transition: transform 0.5s var(--ease-smooth);
 }
 
+.project-card:hover .card-image,
 .project-card:hover .card-video {
   transform: scale(1.03);
 }
@@ -438,16 +441,16 @@ body.modal-open {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+  border: 1px solid var(--border-light);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .featured-pill {
@@ -721,12 +724,14 @@ body.modal-open {
   border: 1px solid var(--border-light);
 }
 
+.modal-image,
 .modal-video,
 .modal-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--bg-subtle);
   display: block;
 }
 

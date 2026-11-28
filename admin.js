@@ -1,6 +1,6 @@
 (() => {
-  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v1";
-  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v1";
+  const STORAGE_CONFIG_KEY = "sungomi_arc_config_v2";
+  const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v2";
 
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
