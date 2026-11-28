@@ -454,23 +454,23 @@
     let t = 0;
 
     function loop() {
-      t += 0.04;
-      ctx.fillStyle = "#060914";
+      t += 0.03;
+      ctx.fillStyle = "#f8fafc";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = color || "#00f0ff";
+      ctx.strokeStyle = color || "#2563eb";
       ctx.lineWidth = 2;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 5; i++) {
         ctx.beginPath();
-        const r = 35 + i * 24 + Math.sin(t + i) * 10;
-        ctx.arc(canvas.width / 2 + Math.cos(t * 0.7 + i) * 60, canvas.height / 2 + Math.sin(t + i) * 30, r, 0, Math.PI * 2);
-        ctx.globalAlpha = 0.45 - i * 0.06;
+        const r = 36 + i * 24 + Math.sin(t + i) * 8;
+        ctx.arc(canvas.width / 2 + Math.cos(t * 0.7 + i) * 48, canvas.height / 2 + Math.sin(t + i) * 24, r, 0, Math.PI * 2);
+        ctx.globalAlpha = 0.28 - i * 0.04;
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillText(`DEMO PRESET: ${String(preset || "cyber").toUpperCase()}`, 24, canvas.height - 24);
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "600 14px Pretendard, sans-serif";
+      ctx.fillText(`PREVIEW PRESET: ${String(preset || "cyber").toUpperCase()}`, 24, canvas.height - 24);
 
       rafId = requestAnimationFrame(loop);
     }

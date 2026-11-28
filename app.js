@@ -99,6 +99,15 @@
     return html;
   }
 
+  // HEX 색상을 RGB로 변환 (라이트 톤 프리뷰 틴트용)
+  function hexToRgb(hex) {
+    const clean = String(hex || "#2563eb").replace("#", "");
+    const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+    const num = parseInt(full, 16);
+    if (Number.isNaN(num)) return { r: 37, g: 99, b: 235 };
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  }
+
   async function bindProjectVideo(videoEl, project, cleanups) {
     if (project.videoSourceType === "local" && window.MediaStore) {
       try {
@@ -122,200 +131,312 @@
       videoEl.play().catch(() => {});
       return true;
     }
-    const cleanup = attachProceduralVideo(videoEl, project.demoPreset, project.accentColor);
+    const cleanup = attachProceduralVideo(videoEl, project);
     cleanups.push(cleanup);
     return false;
   }
 
-  // ===== 내장 실시간 데모 영상 생성기 (Canvas -> MediaStream -> <video>) =====
-  function attachProceduralVideo(videoEl, preset, accentColor) {
+  // ===== 깔끔한 화이트 톤 앱/프로그램 UI 목업 프리뷰 생성기 =====
+  function attachProceduralVideo(videoEl, project) {
+    const preset = project.demoPreset || "cyber";
+    const accentColor = project.accentColor || "#2563eb";
+    const rgb = hexToRgb(accentColor);
+    const rgba = (a) => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${a})`;
+    const title = project.title || "App Preview";
+
     const canvas = document.createElement("canvas");
     canvas.width = 640;
     canvas.height = 400;
     const ctx = canvas.getContext("2d");
 
     let rafId = 0;
-    let t = Math.random() * 100;
+    let t = Math.random() * 20;
 
-    // 프리셋별 상태 초기화
-    const particles = Array.from({ length: 36 }, (_, i) => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 2.5,
-      vy: (Math.random() - 0.5) * 2.5,
-      r: 2 + Math.random() * 4,
-      phase: i * 0.4,
-    }));
+    function drawWindowChrome(x, y, w, h, label) {
+      ctx.save();
+      ctx.shadowColor = "rgba(15, 23, 42, 0.08)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 16);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.08)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 16);
+      ctx.stroke();
+
+      // 상단 바
+      ctx.fillStyle = "#f8fafc";
+      ctx.beginPath();
+      ctx.roundRect(x + 1, y + 1, w - 2, 34, [15, 15, 0, 0]);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.06)";
+      ctx.beginPath();
+      ctx.moveTo(x, y + 35);
+      ctx.lineTo(x + w, y + 35);
+      ctx.stroke();
+
+      // macOS 신호등 버튼
+      const dots = ["#f87171", "#fbbf24", "#4ade80"];
+      dots.forEach((col, i) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.arc(x + 18 + i * 13, y + 18, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (label) {
+        ctx.fillStyle = "#64748b";
+        ctx.font = "600 11px Pretendard, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, x + w / 2, y + 22);
+        ctx.textAlign = "left";
+      }
+    }
 
     function drawFrame() {
-      t += 0.03;
+      t += 0.024;
       const w = canvas.width;
       const h = canvas.height;
 
-      // 배경
-      ctx.fillStyle = "#060914";
+      // 깔끔한 화이트 + 은은한 포인트 틴트 배경
+      const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, "#ffffff");
+      bgGrad.addColorStop(0.55, "#f8fafc");
+      bgGrad.addColorStop(1, rgba(0.08));
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
 
+      // 은은한 도트 그리드
+      ctx.fillStyle = "rgba(15, 23, 42, 0.055)";
+      for (let gx = 24; gx < w; gx += 28) {
+        for (let gy = 24; gy < h; gy += 28) {
+          ctx.beginPath();
+          ctx.arc(gx, gy, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
       if (preset === "cyber") {
-        // 네온 신스웨이브 그리드 & 질주 라인
-        const horizon = h * 0.46;
-        const grad = ctx.createLinearGradient(0, 0, 0, horizon);
-        grad.addColorStop(0, "#0b1026");
-        grad.addColorStop(1, "#1e1b4b");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, horizon);
+        // 실시간 차트 & 대시보드 앱 UI 프리뷰
+        drawWindowChrome(68, 56, 504, 294, title);
 
-        // 네온 태양
-        const sunGrad = ctx.createRadialGradient(w / 2, horizon - 20, 10, w / 2, horizon - 20, 90);
-        sunGrad.addColorStop(0, "#00f0ff");
-        sunGrad.addColorStop(0.5, "#ff2e93");
-        sunGrad.addColorStop(1, "transparent");
-        ctx.fillStyle = sunGrad;
-        ctx.beginPath();
-        ctx.arc(w / 2, horizon - 20, 90, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 원근감 바닥 그리드
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.45)";
-        ctx.lineWidth = 1.5;
-        for (let i = -8; i <= 8; i++) {
+        // 상단 KPI 칩 3개
+        for (let i = 0; i < 3; i++) {
+          const cx = 90 + i * 156;
+          ctx.fillStyle = i === 0 ? rgba(0.08) : "#f8fafc";
           ctx.beginPath();
-          ctx.moveTo(w / 2 + i * 22, horizon);
-          ctx.lineTo(w / 2 + i * 110, h);
-          ctx.stroke();
-        }
-        for (let j = 0; j < 10; j++) {
-          const progress = ((j / 10 + (t * 0.35) % 0.1)) % 1;
-          const y = horizon + Math.pow(progress, 2) * (h - horizon);
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-          ctx.stroke();
-        }
-      } else if (preset === "arcade") {
-        // 우주 탄막 슈터 프리뷰
-        ctx.fillStyle = "rgba(6, 9, 20, 0.35)";
-        ctx.fillRect(0, 0, w, h);
-
-        // 보스 코어
-        const bx = w / 2 + Math.sin(t * 0.9) * 110;
-        const by = 110 + Math.cos(t * 1.2) * 20;
-        ctx.fillStyle = accentColor;
-        ctx.shadowColor = accentColor;
-        ctx.shadowBlur = 22;
-        ctx.beginPath();
-        ctx.arc(bx, by, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // 방사형 탄막
-        for (let i = 0; i < 16; i++) {
-          const angle = (i / 16) * Math.PI * 2 + t * 0.8;
-          const dist = ((t * 95 + i * 18) % 280);
-          const px = bx + Math.cos(angle) * dist;
-          const py = by + Math.sin(angle) * dist;
-          ctx.fillStyle = i % 2 === 0 ? "#ff2e93" : "#38bdf8";
-          ctx.beginPath();
-          ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+          ctx.roundRect(cx, 108, 142, 46, 10);
           ctx.fill();
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillRect(cx + 12, 120, 48, 6);
+          ctx.fillStyle = i === 0 ? accentColor : "#0f172a";
+          ctx.fillRect(cx + 12, 134, 78 + Math.sin(t + i) * 10, 9);
         }
 
-        // 플레이어 기체
-        const sx = w / 2 + Math.sin(t * 1.6) * 150;
-        const sy = h - 65;
-        ctx.fillStyle = "#fff";
+        // 실시간 꺾은선 그래프
+        ctx.save();
         ctx.beginPath();
-        ctx.moveTo(sx, sy - 14);
-        ctx.lineTo(sx - 12, sy + 12);
-        ctx.lineTo(sx + 12, sy + 12);
-        ctx.closePath();
-        ctx.fill();
-      } else if (preset === "audio") {
-        // 오디오 웨이브테이블 & 스펙트럼 바
-        const bars = 32;
-        const barW = w / bars;
-        for (let i = 0; i < bars; i++) {
-          const val = (Math.sin(t * 3 + i * 0.45) * 0.5 + 0.5) * 140 + 25;
-          const grad = ctx.createLinearGradient(0, h, 0, h - val);
-          grad.addColorStop(0, "#7c3aed");
-          grad.addColorStop(1, "#00f0ff");
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.roundRect(i * barW + 4, h - val - 30, barW - 8, val, 6);
-          ctx.fill();
+        const chartX = 96;
+        const chartY = 290;
+        const chartW = 448;
+        for (let i = 0; i <= 28; i++) {
+          const px = chartX + (i / 28) * chartW;
+          const py =
+            238 -
+            Math.sin(i * 0.35 + t * 1.6) * 28 -
+            Math.cos(i * 0.18 - t) * 16 -
+            (i / 28) * 18;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         }
-        // 파형 라인
-        ctx.strokeStyle = "#f0abfc";
+        ctx.strokeStyle = accentColor;
         ctx.lineWidth = 3;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        ctx.lineTo(chartX + chartW, chartY + 34);
+        ctx.lineTo(chartX, chartY + 34);
+        ctx.closePath();
+        const areaGrad = ctx.createLinearGradient(0, 170, 0, 324);
+        areaGrad.addColorStop(0, rgba(0.2));
+        areaGrad.addColorStop(1, rgba(0.0));
+        ctx.fillStyle = areaGrad;
+        ctx.fill();
+        ctx.restore();
+      } else if (preset === "terminal") {
+        // 데스크톱 플로팅 위젯 & 사용량 미터 UI 프리뷰 (NoopToken 등)
+        drawWindowChrome(96, 62, 448, 282, title);
+
+        const bars = [
+          { label: "Claude", pct: 0.42 + Math.sin(t * 0.9) * 0.08, col: "#f97316" },
+          { label: "Cursor", pct: 0.68 + Math.cos(t * 0.8) * 0.06, col: "#2563eb" },
+          { label: "Antigravity", pct: 0.34 + Math.sin(t * 1.1 + 1) * 0.09, col: "#10b981" },
+          { label: "ChatGPT", pct: 0.55 + Math.cos(t * 0.7 + 2) * 0.07, col: "#6366f1" },
+        ];
+
+        bars.forEach((b, idx) => {
+          const y = 122 + idx * 50;
+          ctx.fillStyle = "#334155";
+          ctx.font = "600 13px Pretendard, -apple-system, sans-serif";
+          ctx.fillText(b.label, 122, y + 4);
+
+          ctx.fillStyle = "#64748b";
+          ctx.font = "600 12px Pretendard, -apple-system, sans-serif";
+          ctx.textAlign = "right";
+          ctx.fillText(`${Math.round(b.pct * 100)}%`, 518, y + 4);
+          ctx.textAlign = "left";
+
+          ctx.fillStyle = "#f1f5f9";
+          ctx.beginPath();
+          ctx.roundRect(122, y + 14, 396, 12, 6);
+          ctx.fill();
+
+          ctx.fillStyle = b.col;
+          ctx.beginPath();
+          ctx.roundRect(122, y + 14, 396 * b.pct, 12, 6);
+          ctx.fill();
+        });
+      } else if (preset === "physics") {
+        // 경로 & 인터랙티브 캔버스 프리뷰 (Skylane 등)
+        drawWindowChrome(72, 56, 496, 294, title);
+
+        const cx = w / 2;
+        const cy = 224;
+        // 부드러운 경로 곡선
+        ctx.strokeStyle = rgba(0.28);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
         ctx.beginPath();
-        for (let x = 0; x <= w; x += 8) {
-          const y = h * 0.35 + Math.sin(x * 0.025 + t * 4) * 38 * Math.sin(t + x * 0.01);
-          if (x === 0) ctx.moveTo(x, y);
+        ctx.ellipse(cx, cy, 155, 68, -0.18, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 활주로 / 목적지 노드
+        ctx.fillStyle = "#0f172a";
+        ctx.beginPath();
+        ctx.roundRect(cx - 28, cy - 8, 56, 16, 8);
+        ctx.fill();
+
+        // 이동 객체들
+        for (let i = 0; i < 4; i++) {
+          const ang = t * 0.9 + (i * Math.PI) / 2;
+          const px = cx + Math.cos(ang) * 155;
+          const py = cy + Math.sin(ang) * 68;
+          ctx.fillStyle = i % 2 === 0 ? accentColor : "#0f172a";
+          ctx.beginPath();
+          ctx.arc(px, py, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = rgba(0.18);
+          ctx.beginPath();
+          ctx.arc(px, py, 14, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (preset === "audio") {
+        // 모바일/원격 컨트롤 & 웨이브 UI 프리뷰 (NooP 등)
+        drawWindowChrome(76, 62, 310, 276, "Desktop");
+
+        // 우측 iPhone 목업
+        ctx.save();
+        ctx.shadowColor = "rgba(15, 23, 42, 0.1)";
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 8;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.roundRect(422, 74, 142, 264, 24);
+        ctx.fill();
+        ctx.restore();
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.12)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(422, 74, 142, 264, 24);
+        ctx.stroke();
+
+        // 연결 파형
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let x = 104; x <= 356; x += 6) {
+          const y = 212 + Math.sin(x * 0.04 + t * 2.8) * 26 * Math.sin((x - 104) / 252 * Math.PI);
+          if (x === 104) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
         ctx.stroke();
-      } else if (preset === "physics") {
-        // 천체 궤도 시뮬레이터
-        const cx = w / 2;
-        const cy = h / 2;
-        const coreGrad = ctx.createRadialGradient(cx, cy, 4, cx, cy, 55);
-        coreGrad.addColorStop(0, "#fff");
-        coreGrad.addColorStop(0.3, "#38bdf8");
-        coreGrad.addColorStop(1, "transparent");
-        ctx.fillStyle = coreGrad;
+
+        // 트랙패드 커서
+        const mx = 493 + Math.cos(t * 1.4) * 32;
+        const my = 186 + Math.sin(t * 1.8) * 36;
+        ctx.fillStyle = "#f8fafc";
         ctx.beginPath();
-        ctx.arc(cx, cy, 55, 0, Math.PI * 2);
+        ctx.roundRect(438, 108, 110, 146, 14);
         ctx.fill();
-
-        particles.slice(0, 12).forEach((p, idx) => {
-          const rX = 70 + idx * 17;
-          const rY = 42 + idx * 10;
-          const ang = t * (1.2 - idx * 0.06) + p.phase;
-          const px = cx + Math.cos(ang) * rX;
-          const py = cy + Math.sin(ang) * rY;
-
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.16)";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, rX, rY, 0, 0, Math.PI * 2);
-          ctx.stroke();
-
-          ctx.fillStyle = idx % 3 === 0 ? "#f472b6" : "#67e8f9";
-          ctx.beginPath();
-          ctx.arc(px, py, 4 + (idx % 3) * 2, 0, Math.PI * 2);
-          ctx.fill();
-        });
+        ctx.fillStyle = rgba(0.2);
+        ctx.beginPath();
+        ctx.arc(mx, my, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.arc(mx, my, 6, 0, Math.PI * 2);
+        ctx.fill();
       } else if (preset === "shader") {
-        // 리퀴드 프리즘 셰이더 느낌의 컬러 블롭
-        for (let i = 0; i < 5; i++) {
-          const px = w / 2 + Math.cos(t * (0.7 + i * 0.15) + i) * 140;
-          const py = h / 2 + Math.sin(t * (0.9 + i * 0.12) + i * 2) * 90;
-          const r = 95 + Math.sin(t + i) * 25;
-          const g = ctx.createRadialGradient(px, py, 5, px, py, r);
-          g.addColorStop(0, i % 2 === 0 ? "rgba(34,211,238,0.65)" : "rgba(192,132,252,0.65)");
-          g.addColorStop(1, "transparent");
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(px, py, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        // 크로스 디바이스 / 부드러운 카드 인터페이스 프리뷰
+        drawWindowChrome(66, 70, 238, 256, "macOS");
+        drawWindowChrome(336, 70, 238, 256, "Windows");
+
+        // 두 화면 사이를 오가는 커서 & 전송 펄스
+        const progress = (Math.sin(t * 1.2) + 1) / 2;
+        const cx = 135 + progress * 370;
+        const cy = 205 + Math.sin(progress * Math.PI) * -18;
+
+        ctx.strokeStyle = rgba(0.25);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(135, 205);
+        ctx.quadraticCurveTo(320, 165, 505, 205);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = rgba(0.18);
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.fill();
       } else {
-        // 해킹 터미널 매트릭스 스타일
-        ctx.fillStyle = "#04110b";
-        ctx.fillRect(0, 0, w, h);
-        ctx.font = "14px monospace";
-        const lines = [
-          "> INIT GHOST.SYS KERNEL v1.2...",
-          "> SCANNING FIREWALL NODES [192.168.0.x]",
-          "> BYPASSING LAYER 04... OK",
-          "> DECRYPTING PAYLOAD: 0x7FA9C2",
-          "> ACCESS GRANTED // ROOT SHELL ACTIVE",
-        ];
-        lines.forEach((line, idx) => {
-          const visibleChars = Math.floor(((t * 18 + idx * 10) % (line.length + 18)));
-          ctx.fillStyle = idx === 4 ? "#34d399" : "rgba(16, 185, 129, 0.8)";
-          ctx.fillText(line.slice(0, visibleChars), 36, 85 + idx * 46);
-        });
+        // 전략 / 보드 게임 라이트 프리뷰 (arcade 등)
+        drawWindowChrome(76, 56, 488, 294, title);
+
+        const cols = 6;
+        const rows = 3;
+        const startX = 118;
+        const startY = 120;
+        const cellW = 64;
+        const cellH = 56;
+        const activeIdx = Math.floor(t * 1.4) % (cols * rows);
+
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const idx = r * cols + c;
+            const x = startX + c * (cellW + 8);
+            const y = startY + r * (cellH + 10);
+            const isActive = idx === activeIdx || idx === (activeIdx + 7) % (cols * rows);
+            ctx.fillStyle = isActive ? rgba(0.16) : "#f8fafc";
+            ctx.strokeStyle = isActive ? accentColor : "rgba(15, 23, 42, 0.08)";
+            ctx.lineWidth = isActive ? 2 : 1;
+            ctx.beginPath();
+            ctx.roundRect(x, y, cellW, cellH, 10);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
       }
 
       rafId = requestAnimationFrame(drawFrame);
@@ -323,7 +444,6 @@
 
     drawFrame();
 
-    // Canvas를 실제 <video> 스트림으로 연결해 진짜 동영상처럼 자동 재생
     if (typeof canvas.captureStream === "function") {
       const stream = canvas.captureStream(30);
       videoEl.srcObject = stream;
@@ -366,7 +486,7 @@
     if (!activeBtn || !filterIndicator) return;
     const dockRect = activeBtn.parentElement.getBoundingClientRect();
     const btnRect = activeBtn.getBoundingClientRect();
-    const offsetLeft = btnRect.left - dockRect.left - 6;
+    const offsetLeft = btnRect.left - dockRect.left - 4;
     filterIndicator.style.width = `${btnRect.width}px`;
     filterIndicator.style.transform = `translateX(${offsetLeft}px)`;
   }
@@ -386,7 +506,7 @@
         p.title.toLowerCase().includes(q) ||
         p.tagline.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q));
+        (p.tags || []).some((t) => t.toLowerCase().includes(q));
       return matchesCat && matchesSearch;
     });
 
@@ -396,40 +516,46 @@
     filtered.forEach((project) => {
       const card = document.createElement("article");
       card.className = "project-card";
-      card.style.setProperty("--accent", project.accentColor || "#00f0ff");
+      card.style.setProperty("--accent", project.accentColor || "#2563eb");
       card.tabIndex = 0;
       card.setAttribute("role", "button");
       card.setAttribute("aria-label", `${project.title} 상세 보기`);
+
+      const platformStat =
+        (project.stats || []).find((s) => s.label === "플랫폼") ||
+        (project.stats || [])[0];
+      const platformText = platformStat ? platformStat.value : "";
+      const primaryLink = (project.links || []).find((l) => l.primary) || (project.links || [])[0];
+      const ctaText = primaryLink ? "자세히 보기 →" : "상세 보기 →";
 
       card.innerHTML = `
         <div class="card-media">
           <video class="card-video" autoplay muted loop playsinline></video>
           <div class="card-media-overlay">
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div class="card-badges-left">
               <span class="category-chip">${escapeHtml(project.categoryLabel || project.category)}</span>
               ${project.featured ? '<span class="featured-pill">★ 추천</span>' : ""}
             </div>
-            <span class="expand-hint">미리보기 열기 ↗</span>
+            <span class="expand-hint">상세 보기 ↗</span>
           </div>
         </div>
         <div class="card-body">
-          <h3 class="card-title">${escapeHtml(project.title)}</h3>
+          <div class="card-title-row">
+            <h3 class="card-title">${escapeHtml(project.title)}</h3>
+          </div>
           <p class="card-tagline">${escapeHtml(project.tagline)}</p>
           <div class="card-tags">
             ${(project.tags || []).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+          </div>
+          <div class="card-footer">
+            <span class="card-platform">${escapeHtml(platformText)}</span>
+            <span class="card-cta-label">${ctaText}</span>
           </div>
         </div>
       `;
 
       const videoEl = card.querySelector(".card-video");
       bindProjectVideo(videoEl, project, cardStreamCleanups);
-
-      // 마우스 위치에 따른 글래스 반사광
-      card.addEventListener("pointermove", (e) => {
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
-        card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
-      });
 
       card.addEventListener("click", () => openLiquidModal(project, card));
       card.addEventListener("keydown", (e) => {
@@ -443,23 +569,21 @@
     });
   }
 
-  // ===== 물방울처럼 쫙 켜지는 리퀴드 모달 열기/닫기 =====
+  // ===== 상세 모달 열기/닫기 =====
   function openLiquidModal(project, sourceCard) {
     lastTriggerCard = sourceCard;
 
-    // 기존 스트림 정리
     if (activeModalStreamCleanup) {
       activeModalStreamCleanup();
       activeModalStreamCleanup = null;
     }
 
-    // 텍스트 & 메타 채우기
     modalCategory.textContent = project.categoryLabel || project.category.toUpperCase();
     modalTitle.textContent = project.title;
     modalTagline.textContent = project.tagline;
     modalDescription.innerHTML = renderSimpleMarkdown(project.description);
 
-    modalTags.innerHTML = project.tags
+    modalTags.innerHTML = (project.tags || [])
       .map((t) => `<span class="tag">${escapeHtml(t)}</span>`)
       .join("");
 
@@ -490,7 +614,6 @@
       )
       .join("");
 
-    // 영상 자동 재생 설정
     const ytEmbed = getYoutubeEmbedUrl(project.videoUrl);
     if (project.videoSourceType !== "local" && ytEmbed) {
       modalVideo.hidden = true;
@@ -510,93 +633,35 @@
       };
     }
 
-    // FLIP 물방울 확장 애니메이션
     document.body.classList.add("modal-open");
     modalBackdrop.classList.add("open");
     modalBackdrop.setAttribute("aria-hidden", "false");
     liquidModal.scrollTop = 0;
 
-    if (sourceCard) {
-      const fromRect = sourceCard.getBoundingClientRect();
-      const toRect = liquidModal.getBoundingClientRect();
-
-      const dx = fromRect.left + fromRect.width / 2 - (toRect.left + toRect.width / 2);
-      const dy = fromRect.top + fromRect.height / 2 - (toRect.top + toRect.height / 2);
-      const sx = Math.max(0.2, fromRect.width / toRect.width);
-      const sy = Math.max(0.2, fromRect.height / toRect.height);
-
-      liquidModal.animate(
-        [
-          {
-            transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`,
-            borderRadius: "48px",
-            opacity: 0.35,
-          },
-          {
-            transform: "translate3d(0, 0, 0) scale(1.025, 1.025)",
-            borderRadius: "36px",
-            opacity: 1,
-            offset: 0.72,
-          },
-          {
-            transform: "translate3d(0, 0, 0) scale(1, 1)",
-            borderRadius: "34px",
-            opacity: 1,
-          },
-        ],
-        {
-          duration: 540,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-          fill: "both",
-        }
-      );
-    }
+    liquidModal.animate(
+      [
+        { transform: "translateY(14px) scale(0.97)", opacity: 0 },
+        { transform: "translateY(0) scale(1)", opacity: 1 },
+      ],
+      {
+        duration: 280,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        fill: "both",
+      }
+    );
   }
 
   function closeLiquidModal() {
     if (!modalBackdrop.classList.contains("open")) return;
 
-    const finishClose = () => {
-      modalBackdrop.classList.remove("open");
-      modalBackdrop.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("modal-open");
-      modalIframe.src = "";
-      modalVideo.pause();
-      if (activeModalStreamCleanup) {
-        activeModalStreamCleanup();
-        activeModalStreamCleanup = null;
-      }
-    };
-
-    if (lastTriggerCard && document.body.contains(lastTriggerCard)) {
-      const toRect = lastTriggerCard.getBoundingClientRect();
-      const fromRect = liquidModal.getBoundingClientRect();
-      const dx = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
-      const dy = toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2);
-      const sx = Math.max(0.18, toRect.width / fromRect.width);
-      const sy = Math.max(0.18, toRect.height / fromRect.height);
-
-      modalBackdrop.classList.remove("open");
-      const anim = liquidModal.animate(
-        [
-          {
-            transform: "translate3d(0, 0, 0) scale(1, 1)",
-            opacity: 1,
-          },
-          {
-            transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`,
-            borderRadius: "48px",
-            opacity: 0,
-          },
-        ],
-        {
-          duration: 320,
-          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-        }
-      );
-      anim.onfinish = finishClose;
-    } else {
-      finishClose();
+    modalBackdrop.classList.remove("open");
+    modalBackdrop.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    modalIframe.src = "";
+    modalVideo.pause();
+    if (activeModalStreamCleanup) {
+      activeModalStreamCleanup();
+      activeModalStreamCleanup = null;
     }
   }
 
