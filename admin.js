@@ -1,6 +1,69 @@
 (() => {
   const STORAGE_CONFIG_KEY = "sungomi_arc_config_v3";
   const STORAGE_PROJECTS_KEY = "sungomi_arc_projects_v3";
+  const SESSION_AUTH_KEY = "sungomi_admin_unlocked_v1";
+  const EXPECTED_HASH = "c2aedfe4e480f615caa9055bbf823ab7d3b84b50a9f39b91744d582d4d5ee71c";
+
+  const authGate = document.getElementById("authGate");
+  const authForm = document.getElementById("authForm");
+  const authInput = document.getElementById("authInput");
+  const authError = document.getElementById("authError");
+  const lockAdminBtn = document.getElementById("lockAdminBtn");
+
+  async function sha256Hex(str) {
+    const data = new TextEncoder().encode(str);
+    const buf = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function unlockAdmin() {
+    sessionStorage.setItem(SESSION_AUTH_KEY, "1");
+    document.body.classList.remove("admin-locked");
+    if (authGate) authGate.hidden = true;
+  }
+
+  function lockAdmin() {
+    sessionStorage.removeItem(SESSION_AUTH_KEY);
+    document.body.classList.add("admin-locked");
+    if (authGate) authGate.hidden = false;
+    if (authInput) {
+      authInput.value = "";
+      authInput.focus();
+    }
+    if (authError) authError.hidden = true;
+  }
+
+  if (sessionStorage.getItem(SESSION_AUTH_KEY) === "1") {
+    unlockAdmin();
+  }
+
+  if (authForm) {
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const val = (authInput.value || "").trim();
+      try {
+        const digest = await sha256Hex(`sungomi_admin_${val}`);
+        if (digest === EXPECTED_HASH) {
+          authError.hidden = true;
+          unlockAdmin();
+          return;
+        }
+      } catch {
+        // non-secure context fallback
+      }
+      authError.hidden = false;
+      authForm.classList.remove("shake");
+      void authForm.offsetWidth;
+      authForm.classList.add("shake");
+      authInput.select();
+    });
+  }
+
+  if (lockAdminBtn) {
+    lockAdminBtn.addEventListener("click", lockAdmin);
+  }
 
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
 

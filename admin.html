@@ -12,7 +12,31 @@
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./admin.css" />
 </head>
-<body class="admin-body">
+<body class="admin-body admin-locked">
+  <!-- 비밀번호 잠금 화면 -->
+  <div class="auth-gate" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <form class="auth-card" id="authForm">
+      <div class="auth-icon">🔒</div>
+      <h1 id="authTitle">관리자 인증</h1>
+      <p class="auth-desc">비밀번호를 입력하세요.</p>
+      <input
+        type="password"
+        id="authInput"
+        class="adm-input auth-input"
+        placeholder="비밀번호"
+        inputmode="numeric"
+        autocomplete="current-password"
+        autofocus
+        required
+      />
+      <p class="auth-error" id="authError" hidden>비밀번호가 올바르지 않습니다.</p>
+      <div class="auth-actions">
+        <a href="./index.html" class="adm-btn">← 사이트로</a>
+        <button type="submit" class="adm-btn primary">확인</button>
+      </div>
+    </form>
+  </div>
+
   <header class="admin-header">
     <div class="admin-header-left">
       <a href="./index.html" class="back-btn">← 사이트로</a>
@@ -34,6 +58,7 @@
         <input type="file" id="importJsonInput" accept=".json,application/json" hidden />
       </label>
       <button class="adm-btn danger-ghost" id="resetDefaultBtn">초기화</button>
+      <button class="adm-btn" id="lockAdminBtn" title="관리자 잠금">잠금</button>
     </div>
   </header>
 

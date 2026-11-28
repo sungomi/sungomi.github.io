@@ -3,6 +3,84 @@
   background: var(--bg-subtle);
 }
 
+.admin-body.admin-locked > *:not(#authGate) {
+  display: none !important;
+}
+
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-subtle);
+}
+
+.auth-card {
+  width: min(360px, 100%);
+  padding: 28px 24px 24px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.auth-icon {
+  font-size: 1.8rem;
+}
+
+.auth-card h1 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.auth-desc {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.auth-input {
+  text-align: center;
+  font-size: 1.1rem;
+  letter-spacing: 0.25em;
+  padding: 11px 14px;
+}
+
+.auth-error {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.auth-actions a {
+  text-decoration: none;
+}
+
+@keyframes authShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.auth-card.shake {
+  animation: authShake 0.32s ease;
+}
+
 .admin-header {
   position: sticky;
   top: 0;
