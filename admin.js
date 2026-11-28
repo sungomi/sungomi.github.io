@@ -93,6 +93,7 @@
   const newPostBtn = document.getElementById("newPostBtn");
   const duplicatePostBtn = document.getElementById("duplicatePostBtn");
   const deletePostBtn = document.getElementById("deletePostBtn");
+  const savePostBtn = document.getElementById("savePostBtn");
 
   const fieldTitle = document.getElementById("fieldTitle");
   const fieldCategory = document.getElementById("fieldCategory");
@@ -572,6 +573,25 @@
     if (selectedIndex >= 0) selectProject(selectedIndex);
     else renderPostList();
     showToast("삭제됨");
+  });
+
+  savePostBtn.addEventListener("click", () => {
+    clearTimeout(autosaveTimer);
+    syncFormToProject();
+    persistAll();
+    renderPostList();
+    showToast("저장되었습니다.");
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      clearTimeout(autosaveTimer);
+      syncFormToProject();
+      persistAll();
+      renderPostList();
+      showToast("저장되었습니다.");
+    }
   });
 
   // ===== 배포 파일 저장 / 백업 / 복원 / 초기화 =====
